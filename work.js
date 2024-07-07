@@ -1,19 +1,20 @@
+
 'use strict'
 
 /**
  * static files (404.html, sw.js, conf.js)
  */
-const ASSET_URL = 'https://mengnianxiaoyao.github.io/gh-proxy/'
+const ASSET_URL = 'https://crazypeace.github.io/gh-proxy/'
 // 前缀，如果自定义路由为example.com/gh/*，将PREFIX改为 '/gh/'，注意，少一个杠都会错！
 const PREFIX = '/'
-// 分支文件使用镜像的开关，
+// 分支文件使用jsDelivr镜像的开关，0为关闭，默认关闭
 const Config = {
     jsdelivr: 0
 }
 
 const whiteList = [] // 白名单，路径里面有包含字符的才会通过，e.g. ['/username/']
 
-/** @type {ResponseInit} */
+/** @type {RequestInit} */
 const PREFLIGHT_INIT = {
     status: 204,
     headers: new Headers({
@@ -108,7 +109,7 @@ async function fetchHandler(e) {
 
         return httpHandler(req, path)
     } else if (path.search(exp2) === 0) {
-          if (Config.jsdelivr) {
+        if (Config.jsdelivr) {
             const newUrl = path.replace('/blob/', '@').replace(/^(?:https?:\/\/)?github\.com/, 'https://cdn.jsdelivr.net/gh')
             return Response.redirect(newUrl, 302)
         } else {
@@ -119,8 +120,11 @@ async function fetchHandler(e) {
         const newUrl = path.replace(/(?<=com\/.+?\/.+?)\/(.+?\/)/, '@$1').replace(/^(?:https?:\/\/)?raw\.(?:githubusercontent|github)\.com/, 'https://cdn.jsdelivr.net/gh')
         return Response.redirect(newUrl, 302)
     } else if (path==='perl-pe-para') {
-        let reponseText = 's#(curl.*?\\.sh)([^/\\w\\d])#\\1 | perl -pe "\\$(curl -L ' + urlObj.origin + '/perl-pe-para)" \\2#g; s# (git)# https://\\1#g; s#(http.*?git[^/]*?/)#' + urlObj.origin + '/\\1#g';
-        return new Response( reponseText, { status: 200, 
+      let perlstr = 'perl -pe'
+      let responseText = 's#(bash.*?\\.sh)([^/\\w\\d])#\\1 | ' + perlstr + ' "\\$(curl -L ' + urlObj.origin + '/perl-pe-para)" \\2#g; ' +
+                   's# (git)# https://\\1#g; ' +
+                   's#(http.*?git[^/]*?/)#' + urlObj.origin + '/\\1#g';
+      return new Response( responseText, { status: 200, 
             headers: {
               'Content-Type': 'text/plain',
               'Cache-Control': 'max-age=300'
